@@ -1,0 +1,62 @@
+name: Deploy backend to ECS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: careerstart-backend           # change to your ECR repo name
+  ECS_CLUSTER: careerstart-cluster              # change to your ECS cluster name
+  ECS_SERVICE: careerstart-backend-service      # change to your ECS service name
+  CONTAINER_NAME: backend                       # container name in your task definition
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image to ECR
+        id: build-image
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+          IMAGE_REPO="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
+          IMAGE_TAG="${GITHUB_SHA}"
+          IMAGE_URI="${IMAGE_REPO}:${IMAGE_TAG}"
+
+          # Build from the repository root where this workflow runs (Dockerfile
+          # is in the repo root for this backend repository). Use `.` as the
+          # build context so files like `package-lock.json` are available.
+          docker build -t "${IMAGE_URI}" -f Dockerfile .
+          docker push "${IMAGE_URI}"
+
+          echo "✅ Image pushed to ECR"
+          echo "Image URI: ${IMAGE_URI}"
+          echo ""
+          echo "To deploy to ECS:"
+          echo "1. Go to AWS Console → ECS → Clusters → ${ECS_CLUSTER}"
+          echo "2. Click Service: ${ECS_SERVICE}"
+          echo "3. Click 'Update service'"
+          echo "4. Update the container image to: ${IMAGE_URI}"
+          echo "5. Click 'Update' to trigger deployment"
+
