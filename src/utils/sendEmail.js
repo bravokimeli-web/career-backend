@@ -377,3 +377,90 @@ If you have any questions or need assistance, don't hesitate to reach out to our
     text,
   });
 }
+
+export async function sendEncouragementEmail(to, name) {
+  const dashboardUrl = 'https://www.careerstart.co.ke/app/browse';
+  const html = `
+    <div style="font-family: 'DM Sans', sans-serif; color: #1a1816; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #C75B2B; margin-bottom: 12px;">Ready to Launch Your Career? 🚀</h2>
+      
+      <p style="font-size: 16px; margin-bottom: 16px;">Hi ${name},</p>
+      
+      <p style="font-size: 15px; margin-bottom: 16px;">
+        We're thrilled to have you join the CareerStart community! We noticed you haven't explored our opportunities yet, and we'd love to change that.
+      </p>
+      
+      <p style="font-size: 15px; margin-bottom: 16px;">
+        Right now, there are <strong>250+ verified internship and industrial attachment opportunities</strong> waiting for you from Kenya's leading companies. Whether you're looking to:
+      </p>
+      
+      <ul style="font-size: 15px; margin-bottom: 16px; padding-left: 20px;">
+        <li>Gain real-world experience in your field</li>
+        <li>Build your professional network</li>
+        <li>Earn industry-recognized credentials</li>
+        <li>Launch your career on the right track</li>
+      </ul>
+      
+      <p style="font-size: 15px; margin-bottom: 24px;">
+        CareerStart has the perfect opportunity for you. The best part? Many of these roles can be completed in just a few weeks, and you can apply directly from your dashboard.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${dashboardUrl}" style="display: inline-block; background: #C75B2B; color: white; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Browse 250+ Opportunities
+        </a>
+      </div>
+      
+      <p style="font-size: 14px; margin-bottom: 16px; color: #706a60;">
+        <strong>Quick tip:</strong> Use our filters to find opportunities by type (internship or industrial attachment) and location that match your preferences.
+      </p>
+      
+      <p style="font-size: 15px; margin-bottom: 24px;">
+        If you have any questions or need help getting started, our support team is here for you. Just reply to this email or visit our <a href="https://www.careerstart.co.ke/career-guidance" style="color: #C75B2B; text-decoration: none;">Career Guidance</a> section for tips and resources.
+      </p>
+      
+      <p style="font-size: 15px; margin-bottom: 8px;">
+        <strong>Let's make 2026 your breakthrough year! 💪</strong>
+      </p>
+      
+      <p style="font-size: 14px; color: #706a60; margin-top: 32px; border-top: 1px solid #e0dbd3; padding-top: 16px;">
+        — The CareerStart Team<br>
+        <em>Connecting Kenyan talent with quality opportunities</em>
+      </p>
+    </div>
+  `;
+
+  const text = `Ready to Launch Your Career? 🚀
+
+Hi ${name},
+
+We're thrilled to have you join the CareerStart community! We noticed you haven't explored our opportunities yet, and we'd love to change that.
+
+Right now, there are 250+ verified internship and industrial attachment opportunities waiting for you from Kenya's leading companies. Whether you're looking to:
+- Gain real-world experience in your field
+- Build your professional network
+- Earn industry-recognized credentials
+- Launch your career on the right track
+
+CareerStart has the perfect opportunity for you. The best part? Many of these roles can be completed in just a few weeks, and you can apply directly from your dashboard.
+
+Browse 250+ Opportunities: ${dashboardUrl}
+
+Quick tip: Use our filters to find opportunities by type (internship or industrial attachment) and location that match your preferences.
+
+If you have any questions or need help getting started, our support team is here for you. Just reply to this email.
+
+Let's make 2026 your breakthrough year! 💪
+
+— The CareerStart Team
+Connecting Kenyan talent with quality opportunities`;
+
+  return safeSendEmail({
+    from: resendFrom,
+    to,
+    subject: '🚀 Ready to launch your career? 250+ opportunities waiting for you',
+    html,
+    text,
+  });
+}
+

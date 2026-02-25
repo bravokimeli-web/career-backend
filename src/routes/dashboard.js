@@ -4,6 +4,7 @@ import Application from '../models/Application.js';
 import User from '../models/User.js';
 import PageVisitor from '../models/PageVisitor.js';
 import { protect, adminOnly } from '../middleware/auth.js';
+import { sendEncouragementEmail } from '../utils/sendEmail.js';
 
 const router = express.Router();
 
@@ -273,6 +274,36 @@ router.get('/visitors', protect, adminOnly, async (req, res) => {
       page,
       pages: Math.ceil(total / limit),
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /dashboard/send-encouragement — admin only: send encouragement email to user who hasn't applied
+router.post('/send-encouragement/:userId', protect, adminOnly, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Verify user exists and hasn't applied
+    const user = await User.findById(userId).select('name email');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check user hasn't already applied
+    const hasApplied = await Application.findOne({ userId });
+    if (hasApplied) {
+      return res.status(400).json({ message: 'User has already applied' });
+    }
+    
+    // Send encouragement email
+    const result = await sendEncouragementEmail(user.email, user.name);
+    
+    if (!result.ok) {
+      return res.status(500).json({ message: 'Failed to send email', error: result.error });
+    }
+    
+    res.json({ message: 'Encouragement email sent successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
