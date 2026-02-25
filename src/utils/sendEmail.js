@@ -436,7 +436,7 @@ Hi ${name},
 
 We're thrilled to have you join the CareerStart community! We noticed you haven't explored our opportunities yet, and we'd love to change that.
 
-Right now, there are ${opportunitiesCount}portunitiesCount} verified internship and industrial attachment opportunities waiting for you from Kenya's leading companies. Whether you're looking to:
+Right now, there are ${opportunitiesCount} verified internship and industrial attachment opportunities waiting for you from Kenya's leading companies. Whether you're looking to:
 - Gain real-world experience in your field
 - Build your professional network
 - Earn industry-recognized credentials
@@ -444,7 +444,7 @@ Right now, there are ${opportunitiesCount}portunitiesCount} verified internship 
 
 CareerStart has the perfect opportunity for you. The best part? Many of these roles can be completed in just a few weeks, and you can apply directly from your dashboard.
 
-Browse 250+ Opportunities: ${dashboardUrl}
+Browse ${opportunitiesCount}+ Opportunities: ${dashboardUrl}
 
 Quick tip: Use our filters to find opportunities by type (internship or industrial attachment) and location that match your preferences.
 
@@ -458,7 +458,7 @@ Connecting Kenyan talent with quality opportunities`;
   return safeSendEmail({
     from: resendFrom,
     to,
-    subject: '🚀 Ready to launch your career? 250+ opportunities waiting for you',
+    subject: `🚀 Ready to launch your career? ${opportunitiesCount}+ opportunities waiting for you`,
     html,
     text,
   });
