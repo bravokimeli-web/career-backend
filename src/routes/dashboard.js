@@ -166,7 +166,10 @@ router.get('/analytics', protect, adminOnly, async (req, res) => {
       _id: { $nin: appliedUserIds },
       role: { $in: ['student', 'graduate'] },
       createdAt: { $gte: startDate },
-    }).select('_id name email createdAt').lean();
+    })
+      .select('_id name email createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
     
     // Users who signed up but didn't apply (with their visit info)
     const usersNotAppliedIds = usersNotApplied.map(u => u._id);
