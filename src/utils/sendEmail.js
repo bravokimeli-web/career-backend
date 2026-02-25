@@ -378,7 +378,7 @@ If you have any questions or need assistance, don't hesitate to reach out to our
   });
 }
 
-export async function sendEncouragementEmail(to, name) {
+export async function sendEncouragementEmail(to, name, opportunitiesCount = 0) {
   const dashboardUrl = 'https://www.careerstart.co.ke/app/browse';
   const html = `
     <div style="font-family: 'DM Sans', sans-serif; color: #1a1816; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -391,7 +391,7 @@ export async function sendEncouragementEmail(to, name) {
       </p>
       
       <p style="font-size: 15px; margin-bottom: 16px;">
-        Right now, there are <strong>250+ verified internship and industrial attachment opportunities</strong> waiting for you from Kenya's leading companies. Whether you're looking to:
+        Right now, there are <strong>${opportunitiesCount} verified internship and industrial attachment opportunities</strong> waiting for you from Kenya's leading companies. Whether you're looking to:
       </p>
       
       <ul style="font-size: 15px; margin-bottom: 16px; padding-left: 20px;">
@@ -407,7 +407,7 @@ export async function sendEncouragementEmail(to, name) {
       
       <div style="text-align: center; margin: 32px 0;">
         <a href="${dashboardUrl}" style="display: inline-block; background: #C75B2B; color: white; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 16px;">
-          Browse 250+ Opportunities
+          Browse ${opportunitiesCount}+ Opportunities
         </a>
       </div>
       
@@ -436,7 +436,7 @@ Hi ${name},
 
 We're thrilled to have you join the CareerStart community! We noticed you haven't explored our opportunities yet, and we'd love to change that.
 
-Right now, there are 250+ verified internship and industrial attachment opportunities waiting for you from Kenya's leading companies. Whether you're looking to:
+Right now, there are ${opportunitiesCount}portunitiesCount} verified internship and industrial attachment opportunities waiting for you from Kenya's leading companies. Whether you're looking to:
 - Gain real-world experience in your field
 - Build your professional network
 - Earn industry-recognized credentials

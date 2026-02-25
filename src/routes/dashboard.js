@@ -296,8 +296,11 @@ router.post('/send-encouragement/:userId', protect, adminOnly, async (req, res) 
       return res.status(400).json({ message: 'User has already applied' });
     }
     
-    // Send encouragement email
-    const result = await sendEncouragementEmail(user.email, user.name);
+    // Fetch current opportunity count for dynamic messaging
+    const opportunitiesCount = await Opportunity.countDocuments({ isActive: true });
+    
+    // Send encouragement email with live count
+    const result = await sendEncouragementEmail(user.email, user.name, opportunitiesCount);
     
     if (!result.ok) {
       return res.status(500).json({ message: 'Failed to send email', error: result.error });
