@@ -130,7 +130,7 @@ router.post('/admin/:id/send-reminder', protect, adminOnly, async (req, res) => 
       opportunityId: application.opportunityId._id,
       type: 'payment_reminder',
       subject: `Complete your application for ${application.opportunityId.title}`,
-      content: `Manual reminder sent by admin. Please complete your application.`,
+      content: `Please complete your application.`,
       emailSent: true,
       sentAt: new Date(),
     });
