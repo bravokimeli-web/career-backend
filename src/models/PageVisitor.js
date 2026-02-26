@@ -18,6 +18,9 @@ const pageVisitorSchema = new mongoose.Schema(
     // Referrer
     referrer: { type: String },
 
+    // Referral code (e.g. from link like ?ref=john)
+    referral: { type: String },
+
     // Whether user is authenticated
     isAuthenticated: { type: Boolean, default: false },
     
@@ -31,6 +34,7 @@ const pageVisitorSchema = new mongoose.Schema(
 pageVisitorSchema.index({ page: 1, createdAt: -1 });
 pageVisitorSchema.index({ userId: 1, createdAt: -1 });
 pageVisitorSchema.index({ sessionId: 1, createdAt: -1 });
+pageVisitorSchema.index({ referral: 1, createdAt: -1 });
 pageVisitorSchema.index({ createdAt: -1 });
 
 export default mongoose.model('PageVisitor', pageVisitorSchema);

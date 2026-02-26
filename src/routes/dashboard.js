@@ -4,7 +4,7 @@ import Opportunity from '../models/Opportunity.js';
 import Application from '../models/Application.js';
 import User from '../models/User.js';
 import PageVisitor from '../models/PageVisitor.js';
-import PromoLink from '../models/PromoLink.js';
+import Referral from '../models/Referral.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 import { sendEncouragementEmail } from '../utils/sendEmail.js';
 
@@ -121,7 +121,7 @@ router.get('/applications-status', protect, adminOnly, async (req, res) => {
 // POST /dashboard/track-visit — record a page visit (public endpoint, can be auth or anon)
 router.post('/track-visit', async (req, res) => {
   try {
-    const { page, sessionId, timeSpent, promoCode } = req.body;
+    const { page, sessionId, timeSpent, referral } = req.body;
     
     const userId = req.user?._id || null;
     const isAuthenticated = !!req.user;
@@ -133,15 +133,15 @@ router.post('/track-visit', async (req, res) => {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip || req.connection.remoteAddress,
       referrer: req.headers['referer'],
-      promoCode: promoCode || null,
+      referral: referral || null,
       isAuthenticated,
       timeSpent: timeSpent || 0,
     });
     
     await visitor.save();
-    // increment promo link counter if promoCode present
-    if (promoCode) {
-      PromoLink.findOneAndUpdate({ code: promoCode }, { $inc: { clicks: 1 } }).exec().catch(() => {});
+    // increment referral counter if present
+    if (referral) {
+      Referral.findOneAndUpdate({ code: referral }, { $inc: { clicks: 1 } }).exec().catch(() => {});
     }
     res.json({ ok: true });
   } catch (err) {
@@ -150,60 +150,6 @@ router.post('/track-visit', async (req, res) => {
   }
 });
 
-// GET /dashboard/promo — list promo links created by the user (admin can see all)
-router.get('/promo', protect, adminOnly, async (req, res) => {
-  try {
-    // Admin should see all links; other users see only their own
-    const filter = req.user.role === 'admin' ? {} : { createdBy: req.user._id };
-    const links = await PromoLink.find(filter).sort({ createdAt: -1 }).lean();
-    res.json({ links });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// POST /dashboard/promo — create a new promo link
-router.post('/promo', protect, adminOnly, async (req, res) => {
-  try {
-    const { description } = req.body;
-    const code = crypto.randomBytes(4).toString('hex');
-    const link = new PromoLink({ code, description, createdBy: req.user._id });
-    await link.save();
-    res.json({ link });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// GET /r/:code — public redirect for promo links
-router.get('/r/:code', async (req, res) => {
-  try {
-    const { code } = req.params;
-    const link = await PromoLink.findOne({ code });
-    if (link) {
-      link.clicks = (link.clicks || 0) + 1;
-      await link.save();
-    }
-
-    // record a visit as well
-    const visitor = new PageVisitor({
-      page: 'promo',
-      sessionId: req.cookies?.careerstart_session_id || null,
-      userAgent: req.headers['user-agent'],
-      ipAddress: req.ip || req.connection.remoteAddress,
-      referrer: req.headers['referer'],
-      promoCode: code,
-      isAuthenticated: false,
-    });
-    await visitor.save().catch(() => {});
-
-    // redirect to homepage carrying promo code as query param for front‑end tracking
-    return res.redirect(302, `/?promo=${code}`);
-  } catch (err) {
-    // even if something fails we still want to send user on their way
-    return res.redirect('/');
-  }
-});
 
 // GET /dashboard/analytics — admin only: visitor and activity analytics
 router.get('/analytics', protect, adminOnly, async (req, res) => {
@@ -327,7 +273,7 @@ router.get('/visitors', protect, adminOnly, async (req, res) => {
         userName: v.userId?.name || 'Anonymous',
         userEmail: v.userId?.email || '—',
         page: v.page,
-        promoCode: v.promoCode || null,
+        referral: v.referral || null,
         timeSpent: v.timeSpent,
         isAuthenticated: v.isAuthenticated,
         userAgent: v.userAgent,
