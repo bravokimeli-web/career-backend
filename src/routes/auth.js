@@ -31,6 +31,7 @@ router.post(
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
       const { name, email, password, role: bodyRole } = req.body;
+      const referral = req.body.referral || null;
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ message: 'Email already registered' });
       const isAdmin = process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
@@ -44,6 +45,7 @@ router.post(
         role,
         emailOTP: hashOTP(otp),
         emailOTPExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+        referralCode: referral || undefined,
       });
       const emailSent = await sendOTPEmail(user.email, otp);
       const u = { _id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, emailVerified: user.emailVerified };
@@ -113,6 +115,7 @@ router.post('/google', async (req, res) => {
       const isAdmin = process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
       const role = isAdmin ? 'admin' : (bodyRole === 'graduate' ? 'graduate' : 'student');
       const otp = generateOTP();
+      const referral = req.body.referral || null;
       user = await User.create({
         name,
         email,
@@ -120,6 +123,7 @@ router.post('/google', async (req, res) => {
         avatar: picture,
         authProvider: 'google',
         role,
+        referralCode: referral || undefined,
         emailVerified: true,
         emailOTP: hashOTP(otp),
         emailOTPExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min

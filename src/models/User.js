@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
     paystackAuthorizationCode: { type: String },
     paystackCardLast4: { type: String },
     paystackCardType: { type: String },
+    referralCode: { type: String, index: true },
     role: { type: String, enum: ['student', 'graduate', 'admin'], default: 'student' },
     emailVerified: { type: Boolean, default: false },
     emailOTP: { type: String },

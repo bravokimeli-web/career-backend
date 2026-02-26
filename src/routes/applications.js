@@ -292,7 +292,7 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      const { opportunityId, coverLetter } = req.body;
+      const { opportunityId, coverLetter, referral } = req.body;
       const opportunity = await Opportunity.findById(opportunityId);
       if (!opportunity) return res.status(404).json({ message: 'Opportunity not found' });
       if (!opportunity.isActive) return res.status(400).json({ message: 'Opportunity is closed' });
@@ -338,6 +338,7 @@ router.post(
           recommendationLetterUrl,
           coverLetter: coverLetter || undefined,
           status: 'pending_payment',
+          referralCode: referral || undefined,
         });
       }
 

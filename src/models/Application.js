@@ -19,6 +19,7 @@ const applicationSchema = new mongoose.Schema(
     refundedAt: { type: Date },
     refundTransferCode: { type: String },
     refundAmount: { type: Number },
+    referralCode: { type: String, index: true },
   },
   { timestamps: true }
 );

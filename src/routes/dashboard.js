@@ -294,14 +294,22 @@ router.get('/referrals', protect, adminOnly, async (req, res) => {
     const referrals = await Referral.find({})
       .sort({ createdAt: -1 })
       .lean();
-    res.json({ referrals: referrals.map(r => ({
-      _id: r._id,
-      code: r.code,
-      description: r.description,
-      clicks: r.clicks || 0,
-      createdAt: r.createdAt,
-      createdBy: r.createdBy,
-    })) });
+    // Enrich with signup and application counts
+    const enriched = await Promise.all(referrals.map(async (r) => {
+      const signupCount = await (await import('mongoose')).default.model('User').countDocuments({ referralCode: r.code }).catch(() => 0);
+      const applicationsCount = await (await import('mongoose')).default.model('Application').countDocuments({ referralCode: r.code }).catch(() => 0);
+      return {
+        _id: r._id,
+        code: r.code,
+        description: r.description,
+        clicks: r.clicks || 0,
+        createdAt: r.createdAt,
+        createdBy: r.createdBy,
+        signupCount,
+        applicationsCount,
+      };
+    }));
+    res.json({ referrals: enriched });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
