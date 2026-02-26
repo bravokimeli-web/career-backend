@@ -315,6 +315,51 @@ router.get('/referrals', protect, adminOnly, async (req, res) => {
   }
 });
 
+// GET /dashboard/referrals/:code/users — admin only: list users referred by code (optional CSV via ?export=csv)
+router.get('/referrals/:code/users', protect, adminOnly, async (req, res) => {
+  try {
+    const { code } = req.params;
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(500, Math.max(10, Number(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+
+    // find users with this referral code
+    const users = await User.find({ referralCode: code })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // determine applied flag for each
+    const userIds = users.map(u => u._id);
+    const apps = await Application.find({ userId: { $in: userIds } })
+      .select('userId')
+      .lean();
+    const appliedSet = new Set(apps.map(a => String(a.userId)));
+
+    const data = users.map(u => ({
+      name: u.name,
+      email: u.email,
+      joinedAt: u.createdAt,
+      applied: appliedSet.has(String(u._id)),
+    }));
+
+    if (req.query.export === 'csv') {
+      // build CSV
+      let csv = 'Name,Email,Joined At,Applied\n';
+      data.forEach(d => {
+        csv += `"${d.name}","${d.email}","${d.joinedAt.toISOString()}",${d.applied ? 'yes' : 'no'}\n`;
+      });
+      res.setHeader('Content-Type', 'text/csv');
+      return res.send(csv);
+    }
+
+    res.json({ users: data, page, limit });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // POST /dashboard/referrals — admin only: create a new referral code
 router.post('/referrals', protect, adminOnly, async (req, res) => {
   try {
