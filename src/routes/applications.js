@@ -210,6 +210,27 @@ router.patch('/admin/:id/status', protect, adminOnly, async (req, res) => {
         opportunityTitle: application.opportunityId.title,
         status,
       });
+
+      // dashboard message for the status update
+      const statusText = status === 'shortlisted'
+        ? 'You have been shortlisted.'
+        : status === 'accepted'
+        ? 'Your application has been accepted.'
+        : status === 'rejected'
+        ? 'Your application was not selected.'
+        : `Status changed to ${status}.`;
+
+      const msg = new Message({
+        userId: application.userId._id,
+        applicationId: application._id,
+        opportunityId: application.opportunityId._id,
+        type: 'status_update',
+        subject: `Application status updated: ${status}`,
+        content: statusText,
+        emailSent: true,
+        sentAt: new Date(),
+      });
+      msg.save().catch(() => {});
     }
     res.json(application);
   } catch (err) {
@@ -383,6 +404,20 @@ export async function paystackWebhookHandler(req, res) {
             name: user.name,
             opportunityTitle: opp.title,
           });
+
+          // record a dashboard message for the user
+          const msg = new Message({
+            userId: user._id,
+            applicationId: application._id,
+            opportunityId: application.opportunityId,
+            type: 'status_update',
+            subject: `Application received for ${opp.title}`,
+            content: `We've received your application for ${opp.title}. We'll review it and update you soon.`,
+            emailSent: true,
+            sentAt: new Date(),
+          });
+          msg.save().catch(() => {});
+
           if (process.env.ADMIN_EMAIL) {
             void sendAdminNewApplicationEmail({
               to: process.env.ADMIN_EMAIL,
