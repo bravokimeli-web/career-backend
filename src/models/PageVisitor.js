@@ -18,9 +18,6 @@ const pageVisitorSchema = new mongoose.Schema(
     // Referrer
     referrer: { type: String },
 
-    // Promotional code or campaign identifier (from tracking links)
-    promoCode: { type: String },
-    
     // Whether user is authenticated
     isAuthenticated: { type: Boolean, default: false },
     
