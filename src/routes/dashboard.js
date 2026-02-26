@@ -288,6 +288,46 @@ router.get('/visitors', protect, adminOnly, async (req, res) => {
   }
 });
 
+// GET /dashboard/referrals — admin only: list referral codes
+router.get('/referrals', protect, adminOnly, async (req, res) => {
+  try {
+    const referrals = await Referral.find({})
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({ referrals: referrals.map(r => ({
+      _id: r._id,
+      code: r.code,
+      description: r.description,
+      clicks: r.clicks || 0,
+      createdAt: r.createdAt,
+      createdBy: r.createdBy,
+    })) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /dashboard/referrals — admin only: create a new referral code
+router.post('/referrals', protect, adminOnly, async (req, res) => {
+  try {
+    const { description } = req.body || {};
+    // generate short unique code
+    const genCode = () => crypto.randomBytes(3).toString('hex').toUpperCase();
+    let code = genCode();
+    // ensure uniqueness
+    let attempts = 0;
+    while (await Referral.findOne({ code }) && attempts < 5) {
+      code = genCode();
+      attempts += 1;
+    }
+    const referral = new Referral({ code, description, createdBy: req.user._id });
+    await referral.save();
+    res.status(201).json({ referral });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // POST /dashboard/send-encouragement — admin only: send encouragement email to user who hasn't applied
 router.post('/send-encouragement/:userId', protect, adminOnly, async (req, res) => {
   try {
