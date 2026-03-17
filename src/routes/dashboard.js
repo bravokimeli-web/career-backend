@@ -101,6 +101,9 @@ router.get('/applications-status', protect, adminOnly, async (req, res) => {
       amountPaid: app.amountPaid,
       hasResume: !!app.resumeUrl,
       hasCoverLetter: !!app.coverLetter,
+      resumeUrl: app.resumeUrl,
+      recommendationLetterUrl: app.recommendationLetterUrl,
+      coverLetter: app.coverLetter,
     }));
 
     res.json({
