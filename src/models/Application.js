@@ -9,7 +9,7 @@ const applicationSchema = new mongoose.Schema(
     coverLetter: { type: String },
     status: {
       type: String,
-      enum: ['pending_payment', 'submitted', 'under_review', 'shortlisted', 'rejected', 'accepted'],
+      enum: ['pending_payment', 'submitted', 'under_review', 'shortlisted', 'interview_scheduled', 'interview_completed', 'rejected', 'accepted'],
       default: 'pending_payment',
     },
     mpesaCheckoutRequestId: { type: String }, // legacy
@@ -20,6 +20,16 @@ const applicationSchema = new mongoose.Schema(
     refundTransferCode: { type: String },
     refundAmount: { type: Number },
     referralCode: { type: String, index: true },
+    interviewToken: { type: String, unique: true, sparse: true },
+    interviewQuestions: [{ type: String }],
+    interviewResponses: [{ 
+      question: String,
+      answer: String,
+      videoUrl: String,
+      recordedAt: Date
+    }],
+    interviewScheduledAt: { type: Date },
+    interviewCompletedAt: { type: Date },
   },
   { timestamps: true }
 );

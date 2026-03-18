@@ -24,6 +24,23 @@ import {
 } from '../utils/paystack.js';
 import { validateDocFile } from '../utils/fileValidation.js';
 
+const INTERVIEW_QUESTIONS = {
+  internship: [
+    "Tell us about a project you've worked on and what you learned from it.",
+    "Why are you interested in this internship position?",
+    "Describe a challenge you faced and how you overcame it.",
+    "What are your career goals and how does this internship fit into them?",
+    "How do you handle working in a team environment?"
+  ],
+  attachment: [
+    "What motivated you to pursue industrial attachment in this field?",
+    "Describe your understanding of our company's industry.",
+    "What skills do you hope to gain from this attachment?",
+    "How do you plan to contribute to our team during your attachment?",
+    "What are your expectations for supervision and feedback?"
+  ]
+};
+
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -189,14 +206,36 @@ router.post('/admin/transfer-mpesa', protect, adminOnly, async (req, res) => {
 // Admin: update application status (e.g. after reviewing documents)
 router.patch('/admin/:id/status', protect, adminOnly, async (req, res) => {
   try {
-    const allowed = ['submitted', 'under_review', 'shortlisted', 'rejected', 'accepted'];
+    const allowed = ['submitted', 'under_review', 'shortlisted', 'interview_scheduled', 'interview_completed', 'rejected', 'accepted'];
     const { status } = req.body;
     if (!status || !allowed.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status. Use: submitted, under_review, shortlisted, rejected, accepted' });
+      return res.status(400).json({ message: 'Invalid status. Use: submitted, under_review, shortlisted, interview_scheduled, interview_completed, rejected, accepted' });
     }
+
+    let updateData = { status };
+    if (status === 'interview_scheduled') {
+      // Generate unique token
+      const crypto = await import('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      
+      // Get opportunity type to select questions
+      const application = await Application.findById(req.params.id).populate('opportunityId', 'type');
+      if (!application) return res.status(404).json({ message: 'Application not found' });
+      
+      const oppType = application.opportunityId?.type || 'internship';
+      const questions = INTERVIEW_QUESTIONS[oppType] || INTERVIEW_QUESTIONS.internship;
+      
+      // Shuffle and select 3 questions
+      const selectedQuestions = questions.sort(() => 0.5 - Math.random()).slice(0, 3);
+      
+      updateData.interviewToken = token;
+      updateData.interviewQuestions = selectedQuestions;
+      updateData.interviewScheduledAt = new Date();
+    }
+
     const application = await Application.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateData,
       { new: true }
     )
       .populate('opportunityId', 'title company type')
@@ -233,6 +272,78 @@ router.patch('/admin/:id/status', protect, adminOnly, async (req, res) => {
       msg.save().catch(() => {});
     }
     res.json(application);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get interview by token (public route for applicants)
+router.get('/interview/:token', async (req, res) => {
+  try {
+    const application = await Application.findOne({ interviewToken: req.params.token })
+      .populate('opportunityId', 'title company type')
+      .populate('userId', 'name email')
+      .lean();
+    if (!application) return res.status(404).json({ message: 'Interview not found' });
+    if (application.status !== 'interview_scheduled') {
+      return res.status(400).json({ message: 'Interview not available' });
+    }
+    res.json({
+      id: application._id,
+      applicant: { name: application.userId?.name, email: application.userId?.email },
+      opportunity: { title: application.opportunityId?.title, company: application.opportunityId?.company },
+      questions: application.interviewQuestions,
+      responses: application.interviewResponses || [],
+      scheduledAt: application.interviewScheduledAt,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Submit interview response
+router.post('/interview/:token/response', upload.single('video'), async (req, res) => {
+  try {
+    const { questionIndex, answer } = req.body;
+    const application = await Application.findOne({ interviewToken: req.params.token });
+    if (!application) return res.status(404).json({ message: 'Interview not found' });
+    if (application.status !== 'interview_scheduled') {
+      return res.status(400).json({ message: 'Interview not available' });
+    }
+
+    let videoUrl = null;
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer, 'interview_responses', `interview_${application._id}_q${questionIndex}`);
+      videoUrl = result.secure_url;
+    }
+
+    const response = {
+      question: application.interviewQuestions[questionIndex],
+      answer: answer || '',
+      videoUrl,
+      recordedAt: new Date(),
+    };
+
+    application.interviewResponses = application.interviewResponses || [];
+    application.interviewResponses[questionIndex] = response;
+    await application.save();
+
+    res.json({ message: 'Response saved' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Complete interview
+router.post('/interview/:token/complete', async (req, res) => {
+  try {
+    const application = await Application.findOneAndUpdate(
+      { interviewToken: req.params.token, status: 'interview_scheduled' },
+      { status: 'interview_completed', interviewCompletedAt: new Date() },
+      { new: true }
+    );
+    if (!application) return res.status(404).json({ message: 'Interview not found' });
+    res.json({ message: 'Interview completed' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

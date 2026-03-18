@@ -60,9 +60,9 @@ router.get('/applications-status', protect, adminOnly, async (req, res) => {
     const filterStatus = req.query.status; // Optional filter: 'pending', 'completed'
 
     // Pending statuses: applications that haven't been finalized
-    const pendingStatuses = ['pending_payment', 'submitted', 'under_review'];
+    const pendingStatuses = ['pending_payment', 'submitted', 'under_review', 'shortlisted', 'interview_scheduled'];
     // Completed statuses: applications with final outcome
-    const completedStatuses = ['shortlisted', 'rejected', 'accepted'];
+    const completedStatuses = ['interview_completed', 'rejected', 'accepted'];
 
     let query = {};
     if (filterStatus === 'pending') {
@@ -104,6 +104,7 @@ router.get('/applications-status', protect, adminOnly, async (req, res) => {
       resumeUrl: app.resumeUrl,
       recommendationLetterUrl: app.recommendationLetterUrl,
       coverLetter: app.coverLetter,
+      interviewToken: app.interviewToken,
     }));
 
     res.json({
