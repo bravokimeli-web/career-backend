@@ -21,13 +21,9 @@ const PORT = process.env.PORT || 5000;
 
 /* ---------------------- SECURITY & PERFORMANCE ---------------------- */
 
-// Trust AWS load balancer
 app.set('trust proxy', 1);
-
-// Compression (VERY important for speed)
 app.use(compression());
 
-// Body limits (prevents crashes)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -69,7 +65,7 @@ app.use('/api/', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-/* ---------------------- WEBHOOK (RAW BODY MUST COME FIRST) ---------------------- */
+/* ---------------------- WEBHOOK ---------------------- */
 
 app.post(
   '/api/applications/paystack-webhook',
@@ -98,18 +94,18 @@ app.use('/api/messages', messageRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-/* ---------------------- DB + SERVER START ---------------------- */
+/* ---------------------- START SERVER (FIXED FOR EB) ---------------------- */
 
 const startServer = async () => {
   try {
     await connectDB();
 
-    // IMPORTANT: avoid duplicate scheduler runs in AWS scaling
-    if (process.env.NODE_ENV !== 'production') {
+    // safer scheduler (avoid duplication on AWS scaling)
+    if (process.env.NODE_ENV === 'development') {
       initializeScheduler();
     }
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
 
