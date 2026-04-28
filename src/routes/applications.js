@@ -374,11 +374,21 @@ router.get('/saved', protect, async (req, res) => {
   }
 });
 
+function appendQueryParams(url, params) {
+  const query = new URLSearchParams(params).toString();
+  return `${url}${url.includes('?') ? '&' : '?'}${query}`;
+}
+
 // Helper: build Paystack callback URL and init payment for an application
 async function getPaymentLink(application, opportunity, user) {
-  const baseUrl = process.env.PAYSTACK_CALLBACK_URL || `${(process.env.FRONTEND_URL || '').replace(/\/$/, '')}/app/applications`;
-  const callbackUrl = `${baseUrl}?payment=done&reference=APP-${application._id}`;
-  const cancelUrl = `${baseUrl.split('?')[0]}?cancelled=1`;
+  const frontendApplicationsUrl = `${(process.env.FRONTEND_URL || '').replace(/\/$/, '')}/app/applications`;
+  const callbackBaseUrl = process.env.PAYSTACK_CALLBACK_URL || frontendApplicationsUrl;
+  const cancelBaseUrl = process.env.PAYSTACK_CANCEL_URL || frontendApplicationsUrl;
+  const callbackUrl = appendQueryParams(callbackBaseUrl, {
+    payment: 'done',
+    reference: `APP-${application._id}`,
+  });
+  const cancelUrl = appendQueryParams(cancelBaseUrl, { cancelled: '1' });
   const reference = `APP-${application._id}-${Date.now()}`;
   const amount = opportunity?.applicationFee ?? 350;
   console.log('[Paystack] Initializing:', { reference, amount, callbackUrl: callbackUrl.slice(0, 60) + '...', email: user.email?.slice(0, 3) + '***' });
