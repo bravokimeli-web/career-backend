@@ -31,7 +31,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 /* ---------------------- CORS CONFIG ---------------------- */
 const allowedOrigins = [
   'http://localhost:3000',
-  process.env.FRONTEND_URL || 'https://careerstart.com'
+  process.env.FRONTEND_URL || 'https://www.careerstart.co.ke',
+  'https://www.careerstart.co.ke',
+  'https://careerstart.co.ke'
 ];
 
 app.use(cors({
