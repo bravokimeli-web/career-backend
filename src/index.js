@@ -17,10 +17,11 @@ import messageRoutes from './routes/messages.js';
 import { notFound, errorHandler } from './middleware/error.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+
+/* ---------------------- PORT (IMPORTANT FOR EB) ---------------------- */
+const PORT = process.env.PORT;
 
 /* ---------------------- SECURITY & PERFORMANCE ---------------------- */
-
 app.set('trust proxy', 1);
 app.use(compression());
 
@@ -28,10 +29,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 /* ---------------------- CORS CONFIG ---------------------- */
-
 const allowedOrigins = [
   'http://localhost:3000',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL || 'https://careerstart.com'
 ];
 
 app.use(cors({
@@ -46,27 +46,22 @@ app.use(cors({
 }));
 
 /* ---------------------- RATE LIMITING ---------------------- */
-
-const apiLimiter = rateLimit({
+app.use('/api/', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false
-});
+  max: 100
+}));
 
-const authLimiter = rateLimit({
+app.use('/api/auth/login', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false
-});
+  max: 20
+}));
 
-app.use('/api/', apiLimiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/register', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20
+}));
 
 /* ---------------------- WEBHOOK ---------------------- */
-
 app.post(
   '/api/applications/paystack-webhook',
   express.raw({ type: 'application/json' }),
@@ -74,7 +69,6 @@ app.post(
 );
 
 /* ---------------------- ROUTES ---------------------- */
-
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -90,17 +84,15 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/messages', messageRoutes);
 
 /* ---------------------- ERROR HANDLING ---------------------- */
-
 app.use(notFound);
 app.use(errorHandler);
 
-/* ---------------------- START SERVER (FIXED FOR EB) ---------------------- */
-
+/* ---------------------- START SERVER ---------------------- */
 const startServer = async () => {
   try {
     await connectDB();
+    console.log("✅ Database connected");
 
-    // safer scheduler (avoid duplication on AWS scaling)
     if (process.env.NODE_ENV === 'development') {
       initializeScheduler();
     }
