@@ -24,6 +24,8 @@ export async function initializeTransaction({ reference, amount, currency, callb
     callback_url: callbackUrl,
     email: customer.email,
     metadata,
+    // Restrict checkout to cards and bank transfers only (PesaLink for KES).
+    channels: ['card', 'bank'],
   };
 
   const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {

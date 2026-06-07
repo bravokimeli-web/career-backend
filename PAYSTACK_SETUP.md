@@ -92,9 +92,8 @@ Use **Test** keys first:
 
 | Feature | Description |
 |---------|-------------|
-| **Initialize** | Redirect users to Paystack hosted page (Card/M-Pesa) |
+| **Initialize** | Redirect users to Paystack hosted page (Card/PesaLink only) |
 | **Verify** | When user returns from payment, backend verifies via API (fallback if webhook delayed) |
-| **M-Pesa Charge** | STK push for M-Pesa payments |
 | **Charge returning customer** | "Pay with saved card" — reuses stored authorization from first card payment |
 | **Refund** | Admin-only: refund to original payment method via Paystack Refund API |
 | **Transfers** | Admin-only: send to M-Pesa via Create Recipient + Initiate Transfer |
