@@ -637,7 +637,7 @@ router.post('/:id/charge-saved-card', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('paystackAuthorizationCode email name').lean();
     if (!user?.paystackAuthorizationCode) {
-      return res.status(400).json({ message: 'No saved card. Please use Pay now.' });
+      return res.status(400).json({ message: 'No saved card. Please use Pay now or M-Pesa.' });
     }
     const application = await Application.findOne({
       _id: req.params.id,
